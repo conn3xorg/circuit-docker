@@ -44,10 +44,20 @@ variable "docker_users" {
   type        = list(string)
   default     = []
   description = "Existing users to add to the docker group, so they can run docker without sudo."
+
+  validation {
+    condition     = alltrue([for u in var.docker_users : can(regex("^[a-z_][a-z0-9_.-]*$", u))])
+    error_message = "Each of docker_users must be a user name such as \"james\"."
+  }
 }
 
 variable "stacks" {
   type        = map(string)
   default     = {}
   description = "Compose files to run, by stack name. Each goes to /opt/stacks/NAME/compose.yaml and runs with docker compose up."
+
+  validation {
+    condition     = alltrue([for name in keys(var.stacks) : can(regex("^[a-z0-9][a-z0-9_-]*$", name))])
+    error_message = "Stack names may use lowercase letters, digits, - and _, as Compose project names do."
+  }
 }

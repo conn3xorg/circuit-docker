@@ -70,7 +70,6 @@ circuit "docker" {
       path    = "/etc/docker/daemon.json"
       content = "${jsonencode(var.daemon_config)}\n"
     }
-    notify = [handler.restart]
   }
 
   step "running" {
@@ -81,11 +80,20 @@ circuit "docker" {
     }
   }
 
+  # Restarts Docker when daemon.json changes, before the stacks run, so
+  # they come up under the new settings.
+  step "config_applied" {
+    command {
+      command  = "systemctl restart docker"
+      triggers = { daemon_json = sha256(jsonencode(var.daemon_config)) }
+    }
+  }
+
   step "users" {
     for_each = toset(var.docker_users)
     command {
-      command = "usermod -aG docker ${item.value}"
-      unless  = "id -nG ${item.value} | tr ' ' '\\n' | grep -qx docker"
+      command = "usermod -aG docker '${item.value}'"
+      unless  = "id -nG '${item.value}' | tr ' ' '\\n' | grep -qx docker"
     }
   }
 
@@ -111,12 +119,6 @@ circuit "docker" {
     command {
       command = "cd ${local.stacks_dir}/${item.key} && docker compose up -d --remove-orphans --wait && sha256sum compose.yaml > .applied"
       unless  = "cd ${local.stacks_dir}/${item.key} && sha256sum -c --status .applied && [ \"$(docker compose config --services | sort)\" = \"$(docker compose ps --services --status running | sort)\" ]"
-    }
-  }
-
-  handler "restart" {
-    service {
-      name = "docker"
     }
   }
 }

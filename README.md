@@ -2,7 +2,7 @@
 
 A Conn3x circuit that installs Docker Engine from Docker's own repository, keeps it running, and runs your Compose stacks. It's the piece most homelab setups start with: get Docker on the box, then bring up Jellyfin, the *arr apps, a VPN container or a monitoring stack from a `compose.yaml`.
 
-Each stack's file lives in your configuration, so a change to it shows up in `conn3x plan` as a diff, and the apply runs `docker compose up` only when the file changed or a service stopped.
+Each stack's file lives in your configuration, so a change to it shows up in `conn3x plan` as a diff, and the apply runs `docker compose up` only when the file changed or a service stopped. That also means a stack's file is in state, so keep passwords out of it: point Compose at an `env_file` or a secret file on the host instead.
 
 ## Usage
 
@@ -61,8 +61,8 @@ On each host, in order:
 
 1. Adds Docker's repository and signing key: `download.docker.com/linux/rhel` on Rocky Linux, AlmaLinux and RHEL, and the `fedora`, `ubuntu` or `debian` one elsewhere. The keys are in [files](files), copied from Docker's site.
 2. Installs `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin` and `docker-compose-plugin`.
-3. Writes `/etc/docker/daemon.json` from `daemon_config`, and restarts Docker when it changes.
-4. Starts Docker now and at boot.
+3. Writes `/etc/docker/daemon.json` from `daemon_config`.
+4. Starts Docker now and at boot, and restarts it when `daemon_config` changes, before any stack runs.
 5. Adds each of `docker_users` to the `docker` group. The users must already exist; the [users circuit](https://github.com/conn3xorg/circuit-users) can create them.
 6. For each stack, writes `/opt/stacks/NAME/compose.yaml` and runs `docker compose up -d --remove-orphans --wait` in that directory.
 
@@ -88,7 +88,7 @@ Deleting a stack from `stacks` leaves it running. Run `docker compose down` in i
 | `ssh_become` | bool | `false` | Run commands as root through sudo. Set it when `ssh_user` isn't root. |
 | `daemon_config` | any | `{}` | Settings for `/etc/docker/daemon.json`, such as `{ log-driver = "json-file", log-opts = { max-size = "10m" } }`. |
 | `docker_users` | list(string) | `[]` | Existing users to add to the `docker` group. |
-| `stacks` | map(string) | `{}` | Compose files to run, by stack name. |
+| `stacks` | map(string) | `{}` | Compose files to run, by stack name. Names use lowercase letters, digits, `-` and `_`. |
 
 ## Outputs
 
