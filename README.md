@@ -62,15 +62,16 @@ On each host, in order:
 1. Adds Docker's repository and signing key: `download.docker.com/linux/rhel` on Rocky Linux, AlmaLinux and RHEL, and the `fedora`, `ubuntu` or `debian` one elsewhere. The keys are in [files](files), copied from Docker's site.
 2. Installs `docker-ce`, `docker-ce-cli`, `containerd.io`, `docker-buildx-plugin` and `docker-compose-plugin`.
 3. Writes `/etc/docker/daemon.json` from `daemon_config`.
-4. Starts Docker now and at boot, and restarts it when `daemon_config` changes, before any stack runs.
-5. Adds each of `docker_users` to the `docker` group. The users must already exist; the [users circuit](https://github.com/conn3xorg/circuit-users) can create them.
-6. For each stack, writes `/opt/stacks/NAME/compose.yaml` and runs `docker compose up -d --remove-orphans --wait` in that directory.
+4. If the kernel can't load `xt_addrtype`, installs `kernel-modules-extra` for the running kernel. Docker's NAT rules need it, and Rocky Linux 10 and other EL10 cloud images leave it out, so Docker fails to start without it.
+5. Starts Docker now and at boot, and restarts it when `daemon_config` changes, before any stack runs.
+6. Adds each of `docker_users` to the `docker` group. The users must already exist; the [users circuit](https://github.com/conn3xorg/circuit-users) can create them.
+7. For each stack, writes `/opt/stacks/NAME/compose.yaml` and runs `docker compose up -d --remove-orphans --wait` in that directory.
 
 A stack runs again when its file changed since the last successful run, or when one of its services isn't running. `--wait` makes the apply fail if a service doesn't start, or doesn't turn healthy when it has a health check. Every service in a stack should keep running: one that runs once and exits looks stopped, so the stack would run again on every apply.
 
 Before the circuit runs, the `conn3x_host` data source reads each host's distribution over SSH. On Debian and Ubuntu it picks the apt suite from the release: Ubuntu 22.04, 24.04 and 26.04, and Debian 12 and 13. Another release fails the plan.
 
-The circuit doesn't open firewall ports for your stacks. Docker publishes ports through its own iptables rules, which bypass `ufw`.
+The circuit doesn't open firewall ports for your stacks. Docker publishes ports through its own firewall rules, which bypass both `ufw` and firewalld: a published port answers from outside even when the host firewall doesn't allow it. Publish on `127.0.0.1`, as in `"127.0.0.1:8080:80"`, for anything only the host should reach.
 
 ### Removing a stack
 
@@ -103,6 +104,8 @@ Requires Conn3x v0.6.4 or later and systemd on each host, with outbound HTTPS to
 ## Tested on
 
 Rocky Linux 10, Fedora 45, Ubuntu 24.04 and Debian 13. CI applies [examples/local](examples/local) to each on amd64, checks that the second plan has no changes, and checks the example stack is running.
+
+CI containers share the runner's kernel, so they can't catch a missing kernel module. The example was also applied by hand, alongside circuit-monitoring, circuit-firewall and four other circuits, to an Ubuntu 24.04 droplet and a Rocky Linux 10 droplet with SELinux enforcing. That run found the missing `xt_addrtype` on Rocky Linux, now fixed. On both, the stack answered, changing its compose file took effect in a single apply, a published port not allowed by ufw or firewalld still answered from outside, and after a reboot every container came back with no plan changes and no SELinux denials.
 
 ## License
 
