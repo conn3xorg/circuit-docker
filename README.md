@@ -8,7 +8,7 @@ Each stack's file lives in your configuration, so a change to it shows up in `co
 
 ```hcl
 module "docker" {
-  source = "github.com/conn3xorg/circuit-docker?ref=v0.1.0"
+  source = "github.com/conn3xorg/circuit-docker?ref=v0.1.1"
 
   hosts                = { media = "192.168.1.20" }
   ssh_private_key_file = "~/.ssh/id_ed25519"
@@ -105,7 +105,7 @@ Requires Conn3x v0.6.4 or later and systemd on each host, with outbound HTTPS to
 
 Rocky Linux 10, Fedora 45, Ubuntu 24.04 and Debian 13. CI applies [examples/local](examples/local) to each on amd64, checks that the second plan has no changes, and checks the example stack is running.
 
-CI containers share the runner's kernel, so they can't catch a missing kernel module. The example was also applied by hand, alongside circuit-monitoring, circuit-firewall and four other circuits, to an Ubuntu 24.04 droplet and a Rocky Linux 10 droplet with SELinux enforcing. That run found the missing `xt_addrtype` on Rocky Linux, now fixed. On both, the stack answered, changing its compose file took effect in a single apply, a published port not allowed by ufw or firewalld still answered from outside, and after a reboot every container came back with no plan changes and no SELinux denials.
+CI containers share the runner's kernel, so they can't catch a missing kernel module. The example was also applied by hand, alongside circuit-monitoring, circuit-firewall and four other circuits, to an Ubuntu 24.04 droplet and a Rocky Linux 10 droplet with SELinux enforcing. That run found the missing `xt_addrtype` on Rocky Linux, now fixed. On both, the stack answered, changing its compose file took effect in a single apply, a published port not allowed by ufw or firewalld still answered from outside, and after a reboot every container came back with no plan changes and no SELinux denials. The same checks passed on Fedora 44, with SELinux enforcing, and Debian 13 droplets, before and after a reboot.
 
 ## License
 
