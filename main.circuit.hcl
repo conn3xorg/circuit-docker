@@ -72,6 +72,16 @@ circuit "docker" {
     }
   }
 
+  # Docker's NAT rules need xt_addrtype. Rocky Linux 10 and other EL10
+  # cloud images ship it in kernel-modules-extra, which they don't install.
+  # A container can't load modules, so a module its host loaded counts.
+  step "netfilter_modules" {
+    command {
+      command = "command -v dnf >/dev/null || { echo 'xt_addrtype is missing and this host has no dnf to install kernel-modules-extra' >&2; exit 1; }; dnf -y install \"kernel-modules-extra-$(uname -r)\""
+      unless  = "test -d /sys/module/xt_addrtype || modprobe -n xt_addrtype"
+    }
+  }
+
   step "running" {
     service {
       name    = "docker"
@@ -113,12 +123,15 @@ circuit "docker" {
   }
 
   # Runs docker compose up when the file changed since the last run, or when
-  # one of the stack's services isn't running.
+  # one of the stack's services isn't running. The plan checks unless before
+  # the new file is written, so triggers makes the apply check it again once
+  # it is.
   step "stack_up" {
     for_each = var.stacks
     command {
-      command = "cd ${local.stacks_dir}/${item.key} && docker compose up -d --remove-orphans --wait && sha256sum compose.yaml > .applied"
-      unless  = "cd ${local.stacks_dir}/${item.key} && sha256sum -c --status .applied && [ \"$(docker compose config --services | sort)\" = \"$(docker compose ps --services --status running | sort)\" ]"
+      command  = "cd ${local.stacks_dir}/${item.key} && docker compose up -d --remove-orphans --wait && sha256sum compose.yaml > .applied"
+      unless   = "cd ${local.stacks_dir}/${item.key} && sha256sum -c --status .applied && [ \"$(docker compose config --services | sort)\" = \"$(docker compose ps --services --status running | sort)\" ]"
+      triggers = { compose = sha256(item.value) }
     }
   }
 }
