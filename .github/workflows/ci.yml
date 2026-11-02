@@ -73,6 +73,16 @@ jobs:
           conn3x apply -auto-approve
           conn3x plan -detailed-exitcode
           sudo podman exec -w /opt/stacks/whoami circuit-docker docker compose ps --status running --services | grep -qx whoami
+      # The whoami stack answers on the host's address, so this crosses
+      # Docker's NAT rules as a real client would.
+      - name: Reach the stack from outside the host, and again after a restart
+        run: |
+          ip=$(sudo podman inspect -f '{{.NetworkSettings.IPAddress}}' circuit-docker)
+          fetch() { curl -fsS --retry 30 --retry-all-errors --retry-delay 2 --max-time 5 "http://$ip:8080/" | grep -q '^Hostname:'; }
+          fetch
+          [ "$(sudo podman exec circuit-docker docker inspect -f '{{index .HostConfig.LogConfig.Config "max-size"}}' whoami-whoami-1)" = 10m ]
+          sudo podman exec circuit-docker systemctl restart docker
+          fetch
       - name: Clean up
         if: always()
         working-directory: examples/local
