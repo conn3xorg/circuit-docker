@@ -1,5 +1,7 @@
 # circuit-docker
 
+[![Conn3x grade](https://conn3x.org/circuits/docker/grade.svg)](https://conn3x.org/circuits/docker/grade)
+
 A Conn3x circuit that installs Docker Engine from Docker's own repository, keeps it running, and runs your Compose stacks. It's the piece most homelab setups start with: get Docker on the box, then bring up Jellyfin, the *arr apps, a VPN container or a monitoring stack from a `compose.yaml`.
 
 Each stack's file lives in your configuration, so a change to it shows up in `conn3x plan` as a diff, and the apply runs `docker compose up` only when the file changed or a service stopped. That also means a stack's file is in state, so keep passwords out of it: point Compose at an `env_file` or a secret file on the host instead.
