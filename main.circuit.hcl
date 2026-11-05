@@ -16,7 +16,7 @@ data "conn3x_host" "facts" {
 locals {
   # Docker publishes one repository per distribution. Rocky Linux and
   # AlmaLinux use the RHEL one. apt needs the release's codename.
-  repo     = { rocky = "rhel", almalinux = "rhel", rhel = "rhel", centos = "rhel", fedora = "fedora", ubuntu = "ubuntu", debian = "debian" }
+  repo     = { rocky = "rhel", almalinux = "rhel", rhel = "rhel", fedora = "fedora", ubuntu = "ubuntu", debian = "debian" }
   codename = { "22.04" = "jammy", "24.04" = "noble", "26.04" = "resolute", "12" = "bookworm", "13" = "trixie" }
 
   hosts = {
