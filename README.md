@@ -10,7 +10,7 @@ Each stack's file lives in your configuration, so a change to it shows up in `co
 
 ```hcl
 module "docker" {
-  source = "github.com/conn3xorg/circuit-docker?ref=v0.2.0"
+  source = "github.com/conn3xorg/circuit-docker?ref=v0.2.1"
 
   hosts                = { media = "192.168.1.20" }
   ssh_private_key_file = "~/.ssh/id_ed25519"
