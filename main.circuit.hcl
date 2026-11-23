@@ -100,8 +100,8 @@ circuit "docker" {
   # Restarts Docker when daemon.json changes, before the stacks run, so
   # they come up under the new settings.
   step "config_applied" {
-    command {
-      command  = "systemctl restart docker"
+    service_action {
+      name     = "docker"
       triggers = { daemon_json = sha256(jsonencode(var.daemon_config)) }
     }
   }
