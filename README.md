@@ -101,7 +101,7 @@ Deleting a stack from `stacks` leaves it running. Run `docker compose down` in i
 
 ## Requirements
 
-Requires Conn3x v0.6.4 or later and systemd on each host, with outbound HTTPS to download.docker.com and to the registries your stacks pull from.
+Requires Conn3x v0.28.0 or later and systemd on each host, with outbound HTTPS to download.docker.com and to the registries your stacks pull from.
 
 ## Tested on
 
